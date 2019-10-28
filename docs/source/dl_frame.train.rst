@@ -1,10 +1,10 @@
-dl\-frame.train package
+dl\_frame.train package
 =======================
 
 Module contents
 ---------------
 
-.. automodule:: dl-frame.train
+.. automodule:: dl_frame.train
    :members:
    :undoc-members:
    :show-inheritance:

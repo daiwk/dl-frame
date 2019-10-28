@@ -1,4 +1,4 @@
-dl\-frame package
+dl\_frame package
 =================
 
 Subpackages
@@ -6,16 +6,16 @@ Subpackages
 
 .. toctree::
 
-   dl-frame.infer
-   dl-frame.train
+   dl_frame.infer
+   dl_frame.train
 
 Submodules
 ----------
 
-dl\-frame.setup module
+dl\_frame.setup module
 ----------------------
 
-.. automodule:: dl-frame.setup
+.. automodule:: dl_frame.setup
    :members:
    :undoc-members:
    :show-inheritance:
@@ -24,7 +24,7 @@ dl\-frame.setup module
 Module contents
 ---------------
 
-.. automodule:: dl-frame
+.. automodule:: dl_frame
    :members:
    :undoc-members:
    :show-inheritance:

@@ -1,21 +1,21 @@
-dl\-frame.infer package
+dl\_frame.infer package
 =======================
 
 Submodules
 ----------
 
-dl\-frame.infer.test module
+dl\_frame.infer.test module
 ---------------------------
 
-.. automodule:: dl-frame.infer.test
+.. automodule:: dl_frame.infer.test
    :members:
    :undoc-members:
    :show-inheritance:
 
-dl\-frame.infer.test2 module
+dl\_frame.infer.test2 module
 ----------------------------
 
-.. automodule:: dl-frame.infer.test2
+.. automodule:: dl_frame.infer.test2
    :members:
    :undoc-members:
    :show-inheritance:
@@ -24,7 +24,7 @@ dl\-frame.infer.test2 module
 Module contents
 ---------------
 
-.. automodule:: dl-frame.infer
+.. automodule:: dl_frame.infer
    :members:
    :undoc-members:
    :show-inheritance:
