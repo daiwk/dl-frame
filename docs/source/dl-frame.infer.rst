@@ -12,6 +12,14 @@ dl\-frame.infer.test module
    :undoc-members:
    :show-inheritance:
 
+dl\-frame.infer.test2 module
+----------------------------
+
+.. automodule:: dl-frame.infer.test2
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 
 Module contents
 ---------------

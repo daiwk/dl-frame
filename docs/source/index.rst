@@ -7,7 +7,7 @@ Welcome to dl-frame's documentation!
 ====================================
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 4
    :caption: API docs
 
    modules

@@ -6,7 +6,7 @@ FileName: test.py
 Date: 2019-10-28 23:51:36
 """
 
-class demoxxx(object):
+class demoxxx2(object):
     """
     demo
     """
