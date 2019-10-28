@@ -9,11 +9,15 @@ FileName: pythontest.py
 Date: 2019-10-28 23:51:36
 """
 
-def func_demo(args):
+class demo(object):
     """
-    Args:
-        + kargs:dict
-    Returns:
-        xxx
+    demo
     """
-    pass
+    def func_demo(args):
+        """
+        Args:
+            + kargs:dict
+        Returns:
+            xxx
+        """
+        pass
