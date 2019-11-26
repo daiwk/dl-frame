@@ -22,9 +22,11 @@ nsockets="0"
 
 ngpus="1 2 4 8"
 
+python="/opt/compiler/gcc-4.8.2/lib/ld-linux-x86-64.so.2 --library-path /opt/compiler/gcc-4.8.2/lib ~/tools/python-3-tf-2.0-gpu/bin/python3.6"
+
 numa_cmd="numactl --physcpubind=0-$((ncores-1)) -m $nsockets" #run on one socket, without HT
-dlrm_pt_bin="python dlrm_s_pytorch.py"
-dlrm_c2_bin="python dlrm_s_caffe2.py"
+dlrm_pt_bin="$python dlrm_s_pytorch.py"
+dlrm_c2_bin="$python dlrm_s_caffe2.py"
 
 data=random #synthetic
 print_freq=100
