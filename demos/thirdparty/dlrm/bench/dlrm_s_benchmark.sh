@@ -12,15 +12,21 @@ else
 fi
 #echo $dlrm_extra_option
 
-cpu=1
+export LD_LIBRARY_PATH=~/cuda-9.0/lib64/:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=~/cudnn/cudnn_v7.1/cuda/lib64/:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/home/work/nccl/nccl2.2.13_cuda9.0/lib:$LD_LIBRARY_PATH
+
+cpu=0
 gpu=1
 pt=1
-c2=1
+c2=0
 
 ncores=28 #12 #6
+ncores=10 #12 #6
 nsockets="0"
 
 ngpus="1 2 4 8"
+ngpus="1 2 4"
 
 python="/opt/compiler/gcc-4.8.2/lib/ld-linux-x86-64.so.2 --library-path /opt/compiler/gcc-4.8.2/lib ~/tools/python-3-tf-2.0-gpu/bin/python3.6"
 
