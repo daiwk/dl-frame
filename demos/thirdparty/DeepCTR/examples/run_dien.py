@@ -4,7 +4,6 @@ import tensorflow as tf
 from deepctr.models import DIEN
 from deepctr.inputs import SparseFeat,DenseFeat,VarLenSparseFeat,get_feature_names
 
-
 def get_xy_fd(use_neg=False, hash_flag=False):
 
     feature_columns = [SparseFeat('user', 3,embedding_dim=10,use_hash=hash_flag),
@@ -27,10 +26,12 @@ def get_xy_fd(use_neg=False, hash_flag=False):
     hist_igender = np.array([[1, 1, 2,0 ], [2, 1, 1, 0], [2, 1, 0, 0]])
 
     behavior_length = np.array([3,3,2])
+    user_behavior_length = np.array([3, 3, 2])
 
     feature_dict = {'user': uid, 'gender': ugender, 'item': iid, 'item_gender': igender,
                     'hist_item': hist_iid, 'hist_item_gender': hist_igender,
-                    'score': score,"seq_length":behavior_length}
+                    'score': score,"seq_length":user_behavior_length, 
+                    "seq_length1":behavior_length, "seq_length2":behavior_length, "seq_length3":behavior_length, "seq_length4":behavior_length}
 
     if use_neg:
         feature_dict['neg_hist_item'] = np.array([[1, 2, 3, 0], [1, 2, 3, 0], [1, 2, 0, 0]])
@@ -39,6 +40,7 @@ def get_xy_fd(use_neg=False, hash_flag=False):
                         VarLenSparseFeat('neg_hist_item_gender', maxlen=4, vocabulary_size=3+1,embedding_dim=4,embedding_name='item_gender',length_name="seq_length4")]
 
     x = {name:feature_dict[name] for name in get_feature_names(feature_columns)}
+    x["seq_length"] = feature_dict["seq_length"]
     y = [1, 0, 1]
     return x, y, feature_columns, behavior_feature_list
 
@@ -47,9 +49,14 @@ if __name__ == "__main__":
     if tf.__version__ >= '2.0.0':
         tf.compat.v1.disable_eager_execution()
 
-    x, y, feature_columns, behavior_feature_list = get_xy_fd(use_neg=True)
+    x, y, feature_columns, behavior_feature_list = get_xy_fd(use_neg=False)
+    #x, y, feature_columns, behavior_feature_list = get_xy_fd(use_neg=True)
+#    model = DIEN(feature_columns, behavior_feature_list,
+#                 dnn_hidden_units=[4, 4, 4], dnn_dropout=0.6, gru_type="AUGRU", use_negsampling=True)
     model = DIEN(feature_columns, behavior_feature_list,
-                 dnn_hidden_units=[4, 4, 4], dnn_dropout=0.6, gru_type="AUGRU", use_negsampling=True)
+                 dnn_hidden_units=[4, 4, 4], dnn_dropout=0.6, gru_type="AUGRU", use_negsampling=False)
+
+    print (x, "xxx")
 
     model.compile('adam', 'binary_crossentropy',
                   metrics=['binary_crossentropy'])
