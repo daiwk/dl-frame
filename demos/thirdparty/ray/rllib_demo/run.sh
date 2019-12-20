@@ -14,4 +14,6 @@ export LD_LIBRARY_PATH=~/.jumbo/lib/:$LD_LIBRARY_PATH
 ###        stderr=stderr_file)
 
 
-~/daiwenkai/python-3.6.9-gcc82/bin/python3 rllib_demo.py 
+#~/daiwenkai/python-3.6.9-gcc82/bin/python3 rllib_demo.py 
+#~/daiwenkai/python-3.6.9-gcc82/bin/python3 custom_env.py 
+~/daiwenkai/python-3.6.9-gcc82/bin/python3 custom_env_1.py 
