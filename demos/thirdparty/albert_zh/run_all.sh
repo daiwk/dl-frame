@@ -2,10 +2,11 @@
 
 source ./source.conf
 
-function create_data()
-{
 export BERT_BASE_DIR=models_pretrain/albert_tiny_489k
 export BERT_BASE_DIR=models_pretrain/albert_tiny_250k
+
+function create_data()
+{
 $python create_pretraining_data.py \
     --do_whole_word_mask=True \
     --input_file=data/news_zh_1.txt \
@@ -50,8 +51,8 @@ function classify()
             --do_train=true   \
             --do_eval=true   \
             --data_dir=$TEXT_DIR   \
-            --vocab_file=./albert_config/vocab.txt  \
-            --bert_config_file=./albert_config/albert_config_tiny.json \
+            --vocab_file=$BERT_BASE_DIR/vocab.txt  \
+            --bert_config_file=$BERT_BASE_DIR/albert_config_tiny.json \
             --max_seq_length=128 \
             --train_batch_size=64   \
             --learning_rate=1e-4 \
