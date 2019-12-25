@@ -40,6 +40,10 @@ with open(file_x, 'r') as fin, \
         dic.setdefault(uid, {})
         dic[uid].setdefault("u_represent", "")
         dic[uid].setdefault("atts", [])
+        dic[uid].setdefault("attset", set())
+        
+        if att in dic[uid]["attset"]:
+            continue
         
         if len(dic[uid]["u_represent"] + "," + att) < max_a_len:
             if dic[uid]["u_represent"] != "":
@@ -48,6 +52,7 @@ with open(file_x, 'r') as fin, \
                 dic[uid]["u_represent"] += att
 
         dic[uid]["atts"].append(att)
+        dic[uid]["attset"].add(att)
 
     idx = 1
     fout_test_ins.write("xxx\txxx\t1\n")

@@ -39,8 +39,10 @@ $python run_pretraining.py \
 
 function board()
 {
-    ps aux| grep tensorboard | grep my_new_model_path| awk '{print $2}'| xargs kill -9 
-    nohup $tensorboard --logdir=./my_new_model_path/ --port=8003 --host=`hostname` &
+    model=$1 ## default: my_new_model_path
+    port=8003
+    ps aux| grep $port | awk '{print $2}'| xargs kill -9 
+    nohup $tensorboard --logdir=./$model/ --port=$port --host=`hostname` &
 }
 
 function finetune_public()
@@ -65,6 +67,7 @@ function finetune_public()
 function finetune_custom()
 {
     export TEXT_DIR=./my_set
+    rm -rf albert_my_set_checkpoints/*
 
     cd $TEXT_DIR
     python gen_train_eval_ins.py
@@ -87,11 +90,11 @@ function finetune_custom()
 
 function predict_custom()
 {
+    export TEXT_DIR=./my_set
     cd $TEXT_DIR
     python gen_predict_ins.py
     cd -
     # must run train in finetune first, then use its output_dir
-    export TEXT_DIR=./my_set
     $python run_classifier.py   \
         --task_name=lcqmc_pair \
         --do_predict=true \
@@ -110,7 +113,8 @@ function predict_custom()
 
 function main()
 {
-    board
+    model=albert_my_set_checkpoints
+    board $model
 ##    create_data
 ##    pretrain
 ##    finetune_public
