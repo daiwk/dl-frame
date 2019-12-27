@@ -28,6 +28,7 @@ max_b_len = 20
 max_a_len = max_ins_len - max_b_len
 ins = ""
 dic = {}
+g_max_atts = 10
 with open(file_x, 'r') as fin, \
     open(file_train_ins, 'w') as fout_train_ins, \
     open(file_test_ins, 'w') as fout_test_ins, \
@@ -44,12 +45,13 @@ with open(file_x, 'r') as fin, \
         
         if att in dic[uid]["attset"]:
             continue
-        
-        if len(dic[uid]["u_represent"] + "," + att) < max_a_len:
+        cnt = 0 
+        if len(dic[uid]["u_represent"] + "," + att) < max_a_len and cnt < g_max_atts:
             if dic[uid]["u_represent"] != "":
                 dic[uid]["u_represent"] += "," + att
             else:
                 dic[uid]["u_represent"] += att
+            cnt += 1
 
         dic[uid]["atts"].append(att)
         dic[uid]["attset"].add(att)
