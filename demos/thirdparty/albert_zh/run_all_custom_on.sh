@@ -31,7 +31,7 @@ function gen_ins()
 #    time python -u $gen_train_eval_ins
     cat ./train.txt | python gen_pretrain_data.py > ./pretrain.txt
     cd -
-    sh -x split_file.sh $input_file 200000 $filelists
+    sh -x split_file.sh $TEXT_DIR/pretrain.txt 200000 $filelists
 }
 
 function create_data_custom()
@@ -42,7 +42,7 @@ function create_data_custom()
     {
         $python create_pretraining_data.py \
             --do_whole_word_mask=True \
-            --input_file=$TEXT_DIR/pretrain.txt.$idx \
+            --input_file=$TEXT_DIR/pretrain.txt$idx \
             --output_file=$PRE_MODEL_DIR/pre-train.tf_record.$idx \
             --vocab_file=$BERT_BASE_DIR/vocab.txt \
             --do_lower_case=True \
@@ -51,6 +51,7 @@ function create_data_custom()
             --masked_lm_prob=0.10
     } &
     done
+    wait
 
 }
 
