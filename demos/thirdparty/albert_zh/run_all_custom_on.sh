@@ -66,7 +66,7 @@ function pretrain_custom()
     ## 如果要从头pretrain，那就注释掉init_checkpoint
 
     $python run_pretraining.py \
-            --input_file=$PRE_MODEL_DIR/$filelists  \
+            --input_file=$file_list \
             --output_dir=$PRE_MODEL_DIR \
             --do_train=True \
             --do_eval=True \
@@ -138,8 +138,8 @@ function main()
 {
     board $MODEL_DIR 8001
     board $PRE_MODEL_DIR 8002
-    gen_ins
-    create_data_custom
+##    gen_ins
+##    create_data_custom
     pretrain_custom
     finetune_custom
     predict_custom
