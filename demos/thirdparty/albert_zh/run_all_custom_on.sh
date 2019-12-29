@@ -17,7 +17,7 @@ start_predict_step=62
 ## on
 start_finetune_step=8000
 start_predict_step=42000
-start_predict_step=2000
+start_predict_step=10000
 
 filelists=lst.pretrain.txt
 
@@ -138,10 +138,10 @@ function predict_custom()
 
 function main()
 {
-    board $MODEL_DIR 8001
-    board $PRE_MODEL_DIR 8002
     gen_ins
     create_data_custom
+    board $MODEL_DIR 8001
+    board $PRE_MODEL_DIR 8002
     pretrain_custom
     finetune_custom
     predict_custom
