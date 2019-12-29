@@ -112,6 +112,23 @@ function finetune_custom()
 
 }
 
+function finetune_custom_from_raw()
+{
+    $python run_classifier.py   \
+        --task_name=lcqmc_pair   \
+        --do_train=true   \
+        --do_eval=true   \
+        --data_dir=$TEXT_DIR   \
+        --vocab_file=$BERT_BASE_DIR/vocab.txt  \
+        --bert_config_file=$BERT_BASE_DIR/albert_config_tiny.json \
+        --max_seq_length=128 \
+        --train_batch_size=64   \
+        --learning_rate=1e-4 \
+        --num_train_epochs=2 \
+        --output_dir=$MODEL_DIR \
+        --init_checkpoint=$BERT_BASE_DIR/albert_model.ckpt 
+
+}
 function predict_custom()
 {
     export TEXT_DIR=./my_set
@@ -138,12 +155,13 @@ function predict_custom()
 
 function main()
 {
-    gen_ins
-    create_data_custom
-    board $MODEL_DIR 8001
-    board $PRE_MODEL_DIR 8002
-    pretrain_custom
-    finetune_custom
+###    gen_ins
+###    create_data_custom
+###    board $MODEL_DIR 8001
+###    board $PRE_MODEL_DIR 8002
+###    pretrain_custom
+###    finetune_custom
+    finetune_custom_from_raw
     predict_custom
 }
 
