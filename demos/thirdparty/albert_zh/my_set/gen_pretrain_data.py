@@ -10,6 +10,7 @@ import sys
 for line in sys.stdin:
     line = line.strip("\n").split("\t")
     if line[-1] == "1":
-        print line[0]
+        for x in line[0].split(","):
+            print x
         print line[1]
         print ""
