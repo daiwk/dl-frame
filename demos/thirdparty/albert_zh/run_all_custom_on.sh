@@ -17,7 +17,7 @@ start_predict_step=62
 ## on
 start_finetune_step=8000
 start_predict_step=42000
-start_predict_step=10000
+start_predict_step=107000
 
 filelists=lst.pretrain.txt
 
@@ -145,8 +145,8 @@ function predict_custom()
         --max_seq_length=128 \
         --output_dir=$MODEL_DIR \
         --predict_batch_size=1 \
-        --init_checkpoint=$PRE_MODEL_DIR/model.ckpt-$start_predict_step
-##        --init_checkpoint=$MODEL_DIR/model.ckpt-$start_predict_step
+##        --init_checkpoint=$PRE_MODEL_DIR/model.ckpt-$start_predict_step
+        --init_checkpoint=$MODEL_DIR/model.ckpt-$start_predict_step
 
     cd $TEXT_DIR
     python parse_res.py
@@ -155,12 +155,12 @@ function predict_custom()
 
 function main()
 {
-###    gen_ins
-###    create_data_custom
-###    board $MODEL_DIR 8001
-###    board $PRE_MODEL_DIR 8002
-###    pretrain_custom
-###    finetune_custom
+    gen_ins
+    create_data_custom
+    board $MODEL_DIR 8001
+    board $PRE_MODEL_DIR 8002
+    pretrain_custom
+    finetune_custom
     finetune_custom_from_raw
     predict_custom
 }
