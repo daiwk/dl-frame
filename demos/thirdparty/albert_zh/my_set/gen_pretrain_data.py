@@ -17,4 +17,4 @@ for line in sys.stdin:
             print x + ","
 ##        print line[1]
         print ""
-        line_set.add(x)
+        line_set.add(line[0])
