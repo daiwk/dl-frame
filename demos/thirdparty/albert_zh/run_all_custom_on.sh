@@ -17,11 +17,10 @@ start_predict_step=62
 ## on
 start_finetune_step=8000
 start_predict_step=42000
-start_predict_step=4000
 
 filelists=lst.pretrain.txt
 
-function gen_ins()
+function gen_ins_no_use()
 {
     rm -rf $PRE_MODEL_DIR/*
     rm -rf $MODEL_DIR/*
@@ -29,11 +28,26 @@ function gen_ins()
     cd $TEXT_DIR
 ##    rm text.demo
 ##    hdxt fs -cat $hdfs_file > ./text.demo
-#    time python -u $gen_train_eval_ins
+    time python -u $gen_train_eval_ins
     cat ./train.txt | python gen_pretrain_data.py > ./pretrain.txt
     cd -
     sh -x split_file.sh $TEXT_DIR/pretrain.txt 200000 $filelists
 }
+
+function gen_ins_no_finetune()
+{
+    rm -rf $PRE_MODEL_DIR/*
+    rm -rf $MODEL_DIR/*
+
+    cd $TEXT_DIR
+##    rm text.demo
+##    hdxt fs -cat $hdfs_file > ./text.demo
+    rm -rf ./pretrain.txt*
+    time $python2 -u gen_pretrain_ins.py > pretrain.txt
+    cd -
+    sh -x split_file.sh $TEXT_DIR/pretrain.txt 200000 $filelists
+}
+
 
 function create_data_custom()
 {
@@ -135,6 +149,7 @@ function predict_custom()
     python $gen_predict_ins
     cd -
     # must run train in finetune first, then use its output_dir
+    start_predict_step=`ls -lrt $PRE_MODEL_DIR/model.ckpt* -lrt| tail -n 1 | awk -F'model.ckpt-' '{print $2}'| awk -F'.' '{print $1}'`
     $python run_classifier.py   \
         --task_name=lcqmc_pair \
         --do_predict=true \
@@ -144,10 +159,11 @@ function predict_custom()
         --max_seq_length=128 \
         --output_dir=$MODEL_DIR \
         --predict_batch_size=1 \
-        --init_checkpoint=$BERT_BASE_DIR/albert_model.ckpt 
+        --init_checkpoint=$PRE_MODEL_DIR/model.ckpt-$start_predict_step
 
-##        --init_checkpoint=$PRE_MODEL_DIR/model.ckpt-$start_predict_step
 ##        --init_checkpoint=$MODEL_DIR/model.ckpt-$start_predict_step
+##        --init_checkpoint=$MODEL_DIR/model.ckpt-$start_predict_step
+##        --init_checkpoint=$BERT_BASE_DIR/albert_model.ckpt 
     cd $TEXT_DIR
     python parse_res.py
 }
@@ -155,13 +171,13 @@ function predict_custom()
 
 function main()
 {
-####    gen_ins
-####    create_data_custom
+    gen_ins_no_finetune
+    create_data_custom
     board $MODEL_DIR 8001
     board $PRE_MODEL_DIR 8002
-####    pretrain_custom
-####    finetune_custom
-#########    finetune_custom_from_raw
+    pretrain_custom
+#######    finetune_custom
+##    finetune_custom_from_raw
     predict_custom
 }
 
