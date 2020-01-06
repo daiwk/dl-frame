@@ -211,8 +211,8 @@ function pretrain_and_finetune()
 function only_finetune()
 {
     ## only finetune
-###    gen_ins_finetune
-###    finetune_custom_from_raw
+##    gen_ins_finetune
+##    finetune_custom_from_raw
     predict_custom_from_finetune
 }
 
