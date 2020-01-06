@@ -8,7 +8,7 @@ import random
 file_pre = "pretrain.txt"
 #file_pre = "pretrain.txt.demo"
 file_train = "train.txt"
-file_eval = "eval.txt"
+file_eval = "dev.txt"
 file_test = "test.txt"
 max_ins_per_user = 30
 
