@@ -20,20 +20,6 @@ start_predict_step=42000
 
 filelists=lst.pretrain.txt
 
-function gen_ins_no_use()
-{
-    rm -rf $PRE_MODEL_DIR/*
-    rm -rf $MODEL_DIR/*
-
-    cd $TEXT_DIR
-##    rm text.demo
-##    hdxt fs -cat $hdfs_file > ./text.demo
-    time python -u $gen_train_eval_ins
-    cat ./train.txt | python gen_pretrain_data.py > ./pretrain.txt
-    cd -
-    sh -x split_file.sh $TEXT_DIR/pretrain.txt 200000 $filelists
-}
-
 function gen_ins_no_finetune()
 {
     rm -rf $PRE_MODEL_DIR/*
@@ -48,6 +34,15 @@ function gen_ins_no_finetune()
     sh -x split_file.sh $TEXT_DIR/pretrain.txt 200000 $filelists
 }
 
+function gen_ins_finetune()
+{
+##    rm -rf $PRE_MODEL_DIR/*
+##    rm -rf $MODEL_DIR/*
+
+    cd $TEXT_DIR
+    time $python2 -u gen_finetune_ins.py
+    cd -
+}
 
 function create_data_custom()
 {
@@ -90,7 +85,7 @@ function pretrain_custom()
             --max_seq_length=128 \
             --max_predictions_per_seq=128 \
             --learning_rate=0.00176 \
-            --num_train_steps=10000 \
+            --num_train_steps=100000 \
             --num_warmup_steps=1000 \
             --save_checkpoints_steps=2000   \
             --init_checkpoint=$BERT_BASE_DIR/albert_model.ckpt 
@@ -110,6 +105,8 @@ function board()
 
 function finetune_custom()
 {
+    rm $MODEL_DIR/train.tf_record
+    start_finetune_step=`ls -lrt $PRE_MODEL_DIR/model.ckpt* -lrt| tail -n 1 | awk -F'model.ckpt-' '{print $2}'| awk -F'.' '{print $1}'`
     $python run_classifier.py   \
         --task_name=lcqmc_pair   \
         --do_train=true   \
@@ -128,6 +125,7 @@ function finetune_custom()
 
 function finetune_custom_from_raw()
 {
+    rm $MODEL_DIR/train.tf_record
     $python run_classifier.py   \
         --task_name=lcqmc_pair   \
         --do_train=true   \
@@ -143,7 +141,8 @@ function finetune_custom_from_raw()
         --init_checkpoint=$BERT_BASE_DIR/albert_model.ckpt 
 
 }
-function predict_custom()
+
+function predict_custom_from_pretrain()
 {
     cd $TEXT_DIR
     python $gen_predict_ins
@@ -161,24 +160,71 @@ function predict_custom()
         --predict_batch_size=1 \
         --init_checkpoint=$PRE_MODEL_DIR/model.ckpt-$start_predict_step
 
-##        --init_checkpoint=$MODEL_DIR/model.ckpt-$start_predict_step
-##        --init_checkpoint=$MODEL_DIR/model.ckpt-$start_predict_step
 ##        --init_checkpoint=$BERT_BASE_DIR/albert_model.ckpt 
     cd $TEXT_DIR
     python parse_res.py
 }
 
+function predict_custom_from_finetune()
+{
+    cd $TEXT_DIR
+    python $gen_predict_ins
+    cd -
+    # must run train in finetune first, then use its output_dir
+    start_predict_step=`ls -lrt $MODEL_DIR/model.ckpt* -lrt| tail -n 1 | awk -F'model.ckpt-' '{print $2}'| awk -F'.' '{print $1}'`
+    $python run_classifier.py   \
+        --task_name=lcqmc_pair \
+        --do_predict=true \
+        --data_dir=$TEXT_DIR   \
+        --vocab_file=$BERT_BASE_DIR/vocab.txt  \
+        --bert_config_file=$BERT_BASE_DIR/albert_config_tiny.json \
+        --max_seq_length=128 \
+        --output_dir=$MODEL_DIR \
+        --predict_batch_size=1 \
+        --init_checkpoint=$MODEL_DIR/model.ckpt-$start_predict_step
+
+##        --init_checkpoint=$BERT_BASE_DIR/albert_model.ckpt 
+    cd $TEXT_DIR
+    python parse_res.py
+}
+
+function only_pretrain()
+{
+    ## only pretrain
+    gen_ins_no_finetune
+    create_data_custom
+    pretrain_custom
+    predict_custom_from_pretrain
+}
+
+function pretrain_and_finetune()
+{
+    ## pretrain + finetune
+    gen_ins_no_finetune
+    create_data_custom
+    pretrain_custom
+    gen_ins_finetune
+    finetune_custom
+    predict_custom_from_pretrain
+}
+
+function only_finetune()
+{
+    ## only finetune
+###    gen_ins_finetune
+###    finetune_custom_from_raw
+    predict_custom_from_finetune
+}
 
 function main()
 {
-    gen_ins_no_finetune
-    create_data_custom
     board $MODEL_DIR 8001
     board $PRE_MODEL_DIR 8002
-    pretrain_custom
-#######    finetune_custom
-##    finetune_custom_from_raw
-    predict_custom
+
+#    pretrain_and_finetune
+#    only_pretrain
+    only_finetune
+
 }
 
 main >log/run_custom_on.log 2>&1
