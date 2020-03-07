@@ -13,11 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """BERT finetuning runner."""
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import json
 import collections
 import csv
 import os
@@ -32,6 +32,8 @@ flags = tf.flags
 FLAGS = flags.FLAGS
 
 unique_id_to_feature = {}
+all_info = {}
+layer_indexes = []
 
 ## Required parameters
 flags.DEFINE_string(
@@ -224,6 +226,7 @@ def convert_single_example(ex_index, example, label_list, max_seq_length,
     label_map[label] = i
 
   tokens_a = tokenizer.tokenize(example.text_a)
+  all_info[example.guid] = example.text_a
   tokens_b = None
   if example.text_b:
     tokens_b = tokenizer.tokenize(example.text_b)
@@ -323,12 +326,16 @@ def file_based_convert_examples_to_features(
     feature = convert_single_example(ex_index, example, label_list,
                                      max_seq_length, tokenizer)
 
-    unique_id_to_feature[feature.guid] = feature
+    unique_id_to_feature[example.guid] = feature
     def create_int_feature(values):
+      f = tf.train.Feature(int64_list=tf.train.Int64List(value=list(values)))
+      return f
+    def create_int_single_feature(values):
       f = tf.train.Feature(int64_list=tf.train.Int64List(value=list(values)))
       return f
 
     features = collections.OrderedDict()
+    features["unique_ids"] = create_int_single_feature([int(feature.unique_id)])
     features["input_ids"] = create_int_feature(feature.input_ids)
     features["input_mask"] = create_int_feature(feature.input_mask)
     features["segment_ids"] = create_int_feature(feature.segment_ids)
@@ -346,6 +353,7 @@ def file_based_input_fn_builder(input_file, seq_length, is_training,
   """Creates an `input_fn` closure to be passed to TPUEstimator."""
 
   name_to_features = {
+      "unique_ids": tf.FixedLenFeature([1], tf.int64), # dwk
       "input_ids": tf.FixedLenFeature([seq_length], tf.int64),
       "input_mask": tf.FixedLenFeature([seq_length], tf.int64),
       "segment_ids": tf.FixedLenFeature([seq_length], tf.int64),
@@ -463,7 +471,7 @@ def create_model(bert_config, is_training, input_ids, input_mask, segment_ids,
 
     loss = tf.reduce_mean(per_example_loss)
 
-    return (loss, per_example_loss, logits, probabilities)
+    return (loss, per_example_loss, logits, probabilities, model)
 
 def layer_norm(input_tensor, name=None):
   """Run layer normalization on the last dimension of the tensor."""
@@ -495,7 +503,7 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
 
     is_training = (mode == tf.estimator.ModeKeys.TRAIN)
 
-    (total_loss, per_example_loss, logits, probabilities) = create_model(
+    (total_loss, per_example_loss, logits, probabilities, model) = create_model(
         bert_config, is_training, input_ids, input_mask, segment_ids, label_ids,
         num_labels, use_one_hot_embeddings)
 
@@ -559,6 +567,7 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
       }
 
       all_layers = model.get_all_encoder_layers()
+      global layer_indexes
       for (i, layer_index) in enumerate(layer_indexes):
         predictions["layer_output_%d" % i] = all_layers[layer_index]
 
@@ -600,7 +609,7 @@ def input_fn_builder(features, seq_length, is_training, drop_remainder):
     # not TPU compatible. The right way to load data is with TFRecordReader.
     d = tf.data.Dataset.from_tensor_slices({
         "unique_ids":
-            tf.constant(all_unique_ids, shape=[num_examples], dtype=tf.int32),
+            tf.constant(all_unique_ids, shape=[num_examples], dtype=tf.int64),
         "input_ids":
             tf.constant(
                 all_input_ids, shape=[num_examples, seq_length],
@@ -633,21 +642,10 @@ class LCQMCPairClassificationProcessor(DataProcessor): # TODO NEED CHANGE2
   def __init__(self):
     self.language = "zh"
 
-  def get_train_examples(self, data_dir):
-    """See base class."""
-    return self._create_examples(
-        self._read_tsv(os.path.join(data_dir, "train.txt")), "train")
-    # dev_0827.tsv
-
-  def get_dev_examples(self, data_dir):
-    """See base class."""
-    return self._create_examples(
-        self._read_tsv(os.path.join(data_dir, "dev.txt")), "dev")
-
   def get_test_examples(self, data_dir):
     """See base class."""
     return self._create_examples(
-        self._read_tsv(os.path.join(data_dir, "test.txt")), "test")
+        self._read_tsv(os.path.join(data_dir, "test_extract.txt")), "test")
 
   def get_labels(self):
     """See base class."""
@@ -662,7 +660,8 @@ class LCQMCPairClassificationProcessor(DataProcessor): # TODO NEED CHANGE2
       #print('#i:',i,line)
       if i == 0:
         continue
-      guid = "%s-%s" % (set_type, i)
+      #guid = "%s-%s" % (set_type, i)
+      guid = i
       try:
           label = tokenization.convert_to_unicode(line[2])
           text_a = tokenization.convert_to_unicode(line[0])
@@ -707,7 +706,8 @@ class SentencePairClassificationProcessor(DataProcessor):
       #print('#i:',i,line)
       if i == 0:
         continue
-      guid = "%s-%s" % (set_type, i)
+      #guid = "%s-%s" % (set_type, i)
+      guid = i
       try:
           label = tokenization.convert_to_unicode(line[0])
           text_a = tokenization.convert_to_unicode(line[1])
@@ -745,6 +745,8 @@ def main(_):
 
 
   }
+  global layer_indexes
+  layer_indexes = [int(x) for x in FLAGS.layers.split(",")]
 
   tokenization.validate_case_matches_checkpoint(FLAGS.do_lower_case,
                                                 FLAGS.init_checkpoint)
@@ -822,96 +824,6 @@ def main(_):
       eval_batch_size=FLAGS.eval_batch_size,
       predict_batch_size=FLAGS.predict_batch_size)
 
-  if FLAGS.do_train:
-    train_file = os.path.join(FLAGS.output_dir, "train.tf_record")
-    train_file_exists=os.path.exists(train_file)
-    print("###train_file_exists:", train_file_exists," ;train_file:",train_file)
-    if not train_file_exists: # if tf_record file not exist, convert from raw text file. # TODO
-        file_based_convert_examples_to_features(train_examples, label_list, FLAGS.max_seq_length, tokenizer, train_file)
-    tf.logging.info("***** Running training *****")
-    tf.logging.info("  Num examples = %d", len(train_examples))
-    tf.logging.info("  Batch size = %d", FLAGS.train_batch_size)
-    tf.logging.info("  Num steps = %d", num_train_steps)
-    train_input_fn = file_based_input_fn_builder(
-        input_file=train_file,
-        seq_length=FLAGS.max_seq_length,
-        is_training=True,
-        drop_remainder=True)
-    estimator.train(input_fn=train_input_fn, max_steps=num_train_steps)
-
-  if FLAGS.do_eval:
-    eval_examples = processor.get_dev_examples(FLAGS.data_dir)
-    num_actual_eval_examples = len(eval_examples)
-    if FLAGS.use_tpu:
-      # TPU requires a fixed batch size for all batches, therefore the number
-      # of examples must be a multiple of the batch size, or else examples
-      # will get dropped. So we pad with fake examples which are ignored
-      # later on. These do NOT count towards the metric (all tf.metrics
-      # support a per-instance weight, and these get a weight of 0.0).
-      while len(eval_examples) % FLAGS.eval_batch_size != 0:
-        eval_examples.append(PaddingInputExample())
-
-    eval_file = os.path.join(FLAGS.output_dir, "eval.tf_record")
-    file_based_convert_examples_to_features(
-        eval_examples, label_list, FLAGS.max_seq_length, tokenizer, eval_file)
-
-    tf.logging.info("***** Running evaluation *****")
-    tf.logging.info("  Num examples = %d (%d actual, %d padding)",
-                    len(eval_examples), num_actual_eval_examples,
-                    len(eval_examples) - num_actual_eval_examples)
-    tf.logging.info("  Batch size = %d", FLAGS.eval_batch_size)
-
-    # This tells the estimator to run through the entire set.
-    eval_steps = None
-    # However, if running eval on the TPU, you will need to specify the
-    # number of steps.
-    if FLAGS.use_tpu:
-      assert len(eval_examples) % FLAGS.eval_batch_size == 0
-      eval_steps = int(len(eval_examples) // FLAGS.eval_batch_size)
-
-    eval_drop_remainder = True if FLAGS.use_tpu else False
-    eval_input_fn = file_based_input_fn_builder(
-        input_file=eval_file,
-        seq_length=FLAGS.max_seq_length,
-        is_training=False,
-        drop_remainder=eval_drop_remainder)
-
-    #######################################################################################################################
-    # evaluate all checkpoints; you can use the checkpoint with the best dev accuarcy
-    steps_and_files = []
-    filenames = tf.gfile.ListDirectory(FLAGS.output_dir)
-    for filename in filenames:
-        if filename.endswith(".index"):
-            ckpt_name = filename[:-6]
-            cur_filename = os.path.join(FLAGS.output_dir, ckpt_name)
-            global_step = int(cur_filename.split("-")[-1])
-            tf.logging.info("Add {} to eval list.".format(cur_filename))
-            steps_and_files.append([global_step, cur_filename])
-    steps_and_files = sorted(steps_and_files, key=lambda x: x[0])
-
-    output_eval_file = os.path.join(FLAGS.data_dir, "eval_results_albert_zh.txt")
-    print("output_eval_file:",output_eval_file)
-    tf.logging.info("output_eval_file:"+output_eval_file)
-    with tf.gfile.GFile(output_eval_file, "w") as writer:
-        for global_step, filename in sorted(steps_and_files, key=lambda x: x[0]):
-            result = estimator.evaluate(input_fn=eval_input_fn, steps=eval_steps, checkpoint_path=filename)
-
-            tf.logging.info("***** Eval results %s *****" % (filename))
-            writer.write("***** Eval results %s *****\n" % (filename))
-            for key in sorted(result.keys()):
-                tf.logging.info("  %s = %s", key, str(result[key]))
-                writer.write("%s = %s\n" % (key, str(result[key])))
-    #######################################################################################################################
-
-    #result = estimator.evaluate(input_fn=eval_input_fn, steps=eval_steps)
-    #
-    #output_eval_file = os.path.join(FLAGS.output_dir, "eval_results.txt")
-    #with tf.gfile.GFile(output_eval_file, "w") as writer:
-    #  tf.logging.info("***** Eval results *****")
-    #  for key in sorted(result.keys()):
-    #    tf.logging.info("  %s = %s", key, str(result[key]))
-    #    writer.write("%s = %s\n" % (key, str(result[key])))
-
   if FLAGS.do_predict:
     predict_examples = processor.get_test_examples(FLAGS.data_dir)
     num_actual_predict_examples = len(predict_examples)
@@ -942,13 +854,15 @@ def main(_):
         drop_remainder=predict_drop_remainder)
 
 ## extract feature
-    for result in estimator.predict(input_fn, yield_single_examples=True):
+    writer = open("features.txt", 'wb')
+    for result in estimator.predict(predict_input_fn, yield_single_examples=True):
       unique_id = int(result["unique_id"])
       feature = unique_id_to_feature[unique_id]
       output_json = collections.OrderedDict()
       output_json["linex_index"] = unique_id
       all_features = []
-      for (i, token) in enumerate(feature.tokens):
+      tokens = ["xxCLS"]
+      for (i, token) in enumerate(tokens):
         all_layers = []
         for (j, layer_index) in enumerate(layer_indexes):
           layer_output = result["layer_output_%d" % j]
@@ -963,33 +877,17 @@ def main(_):
         features["layers"] = all_layers
         all_features.append(features)
       output_json["features"] = all_features
-      writer.write(json.dumps(output_json) + "\n")
-
-
-
-## predict res
-##    result = estimator.predict(input_fn=predict_input_fn)
-##
-##    output_predict_file = os.path.join(FLAGS.output_dir, "test_results.tsv")
-##    with tf.gfile.GFile(output_predict_file, "w") as writer:
-##      num_written_lines = 0
-##      tf.logging.info("***** Predict results *****")
-##      for (i, prediction) in enumerate(result):
-##        probabilities = prediction["probabilities"]
-##        if i >= num_actual_predict_examples:
-##          break
-##        output_line = "\t".join(
-##            str(class_probability)
-##            for class_probability in probabilities) + "\n"
-##        writer.write(output_line)
-##        num_written_lines += 1
-##    assert num_written_lines == num_actual_predict_examples
-
+      raw = all_info[unique_id]
+      vec = all_features[0]["layers"][0]["values"]
+      out_res = raw.encode("utf8") + "\t".encode("utf8") + ";".join(str(x) for x in vec).encode("utf8")
+      #writer.write(json.dumps(output_json).encode("utf8") + "\n".encode("utf8"))
+      writer.write(out_res + "\n".encode("utf8"))
 
 if __name__ == "__main__":
   flags.mark_flag_as_required("data_dir")
   flags.mark_flag_as_required("task_name")
   flags.mark_flag_as_required("vocab_file")
+  flags.mark_flag_as_required("layers")
   flags.mark_flag_as_required("bert_config_file")
   flags.mark_flag_as_required("output_dir")
   tf.app.run()

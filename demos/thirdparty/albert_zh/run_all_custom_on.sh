@@ -180,7 +180,7 @@ function predict_custom_from_finetune()
         --bert_config_file=$BERT_BASE_DIR/albert_config_tiny.json \
         --max_seq_length=128 \
         --output_dir=$MODEL_DIR \
-        --predict_batch_size=1 \
+        --predict_batch_size=100 \
         --init_checkpoint=$MODEL_DIR/model.ckpt-$start_predict_step
 
 ##        --init_checkpoint=$BERT_BASE_DIR/albert_model.ckpt 
@@ -216,6 +216,31 @@ function only_finetune()
     predict_custom_from_finetune
 }
 
+function only_extract()
+{
+    cd $TEXT_DIR
+    python $gen_extract_ins
+    cd -
+    # must run train in finetune first, then use its output_dir
+    start_predict_step=`ls -lrt $MODEL_DIR/model.ckpt* -lrt| tail -n 1 | awk -F'model.ckpt-' '{print $2}'| awk -F'.' '{print $1}'`
+    $python extract_features_albert.py   \
+        --task_name=lcqmc_pair \
+        --do_predict=true \
+        --layers=-1 \
+        --data_dir=$TEXT_DIR   \
+        --vocab_file=$BERT_BASE_DIR/vocab.txt  \
+        --bert_config_file=$BERT_BASE_DIR/albert_config_tiny.json \
+        --max_seq_length=128 \
+        --output_dir=$MODEL_DIR \
+        --predict_batch_size=100 \
+        --init_checkpoint=$MODEL_DIR/model.ckpt-$start_predict_step
+
+##        --init_checkpoint=$BERT_BASE_DIR/albert_model.ckpt 
+#    cd $TEXT_DIR
+#    python parse_res.py
+
+}
+
 function main()
 {
     board $MODEL_DIR 8001
@@ -223,7 +248,8 @@ function main()
 
 #    pretrain_and_finetune
 #    only_pretrain
-    only_finetune
+#    only_finetune
+    only_extract
 
 }
 
