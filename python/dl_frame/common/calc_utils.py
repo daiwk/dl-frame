@@ -58,3 +58,14 @@ def calc_lda_sim(vec1, vec2):
     norm_vec1 = norm(vec1)
     norm_vec2 = norm(vec2)
     return jsd(norm_vec1, norm_vec2)
+
+def conv_lda_vec(vec):
+    """conv_lda_vec
+    vec是一个dict，key是topicid, value是prob   
+    """
+    r = 1000
+    vec_x = [0] * r
+    for i in xrange(r):
+        if i in vec:
+            vec_x[i] = vec[i]
+    return vec_x
