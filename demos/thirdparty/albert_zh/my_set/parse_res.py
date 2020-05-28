@@ -10,9 +10,10 @@ Date: 2019-12-25 02:01:42
 """
 
 file_pred = "../albert_my_set_checkpoints/test_results.tsv"
+##file_pred = "../albert_my_set_checkpoints_fake/test_results.tsv"
 file_mid = "./mid_res"
 file_out = "./out.res"
-g_max_save = 50
+g_max_save = 300
 
 with open(file_pred, "r") as fin_pred, \
          open(file_mid, "r") as fin_mid, \

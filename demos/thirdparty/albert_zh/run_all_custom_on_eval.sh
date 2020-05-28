@@ -3,6 +3,7 @@ source ~/.bashrc
 
 source ./source.conf
 source ./source_on.conf
+source ./source_eval.conf
 
 export BERT_BASE_DIR=models_pretrain/albert_tiny_489k
 export BERT_BASE_DIR=models_pretrain/albert_tiny_250k
@@ -186,6 +187,7 @@ function predict_custom_from_finetune()
 ##        --init_checkpoint=$BERT_BASE_DIR/albert_model.ckpt 
     cd $TEXT_DIR
     python parse_res.py
+    cd -
 }
 
 function only_pretrain()
@@ -248,9 +250,11 @@ function main()
 
 #    pretrain_and_finetune
 #    only_pretrain
-    only_finetune
+    time only_finetune
+    cd eval_dir
+    python eval_x.py  ## cur best:albert_x_med_len25_att_top3cat1_2_nozonghe 0.116653292334 370 199.445945946
 #    only_extract
 
 }
 
-main >log/run_custom_on.log 2>&1
+main >log/run_custom_on_eval.log 2>&1
