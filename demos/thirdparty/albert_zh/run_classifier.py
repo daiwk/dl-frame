@@ -925,11 +925,6 @@ def main(_):
         is_training=False,
         drop_remainder=predict_drop_remainder)
 
-    print("===========")
-    print(predict_input_fn)
-    import sys
-##    sys.exit(0)
-
     result = estimator.predict(input_fn=predict_input_fn)
 
     output_predict_file = os.path.join(FLAGS.output_dir, "test_results.tsv")

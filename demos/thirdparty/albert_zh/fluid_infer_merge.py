@@ -5,6 +5,7 @@ import math
 
 exe = fluid.Executor(fluid.CPUPlace())
 path = "./pd-model-merge/inference_model"
+path = "./albert_paddle_infer_model"
 
 [inference_program, feed_target_names, fetch_targets] = fluid.io.load_inference_model(dirname=path, executor=exe, params_filename="__params__")
 
@@ -50,8 +51,12 @@ with open('./input_ids', 'r') as fin_input, \
             IteratorV2[2][i][j] = int(line[j])
         i += 1
 
+feed = {feed_target_names[0]: IteratorV2[0], feed_target_names[1]: IteratorV2[1], feed_target_names[2]: IteratorV2[2]}
+import pickle
+with open('inputs.pkl', 'wb') as f:
+    pickle.dump(feed, f)
 results = exe.run(inference_program,
-        feed={feed_target_names[0]: IteratorV2[0], feed_target_names[1]: IteratorV2[1], feed_target_names[2]: IteratorV2[2]},
+        feed=feed,
         fetch_list=fetch_targets)
 #print(results[0])
 for x in results[0]:
