@@ -36,15 +36,18 @@ def freeze_model(sess, output_tensor_names, freeze_model_path):
 
     print("freeze model saved in {}".format(freeze_model_path))
 
-def serving_input_receiver_fn():
+def x_serving_input_receiver_fn():
   inputs = {"input_ids": tf.placeholder(shape=[None, 128], dtype=tf.int32), \
             "input_mask": tf.placeholder(shape=[None, 128], dtype=tf.int32), \
             "segment_ids": tf.placeholder(shape=[None, 128], dtype=tf.int32), \
             "label_ids": tf.placeholder(shape=[None, 1], dtype=tf.int32), \
             "is_real_example": tf.placeholder(shape=[None, 1], dtype=tf.int32)}
 
-  outputs = {"probabilities": tf.placeholder(shape=[None, 1], dtype=tf.float32)}
-  return tf.estimator.export.ServingInputReceiver(inputs, outputs)
+##  outputs = {"probabilities": tf.placeholder(shape=[None, 1], dtype=tf.float32)}
+##  inputs.update(outputs)
+  #return tf.estimator.export.ServingInputReceiver(inputs, outputs)
+  return tf.estimator.export.ServingInputReceiver(inputs, inputs)
+#  return tf.estimator.export.TensorServingInputReceiver(inputs, outputs)
 
 
 #sess = tf.Session()
@@ -573,7 +576,7 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
           scaffold_fn=scaffold_fn)
     else:
       dic_probabilities = {"probabilities": probabilities}
-      output = {'serving_default': tf.estimator.export.PredictOutput(dic_probabilities)}
+      output = {'pred_res': tf.estimator.export.PredictOutput(dic_probabilities)} 
       output_spec = tf.contrib.tpu.TPUEstimatorSpec(
           mode=mode,
           predictions={"probabilities": probabilities},
@@ -962,9 +965,9 @@ def main(_):
 ##    output_names = ['loss/Softmax']
 ##    freeze_model(sess, output_names, './albert_dwk_infer.pb')
 
-    export_dir = estimator.export_savedmodel(
+    export_dir = estimator.export_saved_model(
                 export_dir_base="./test_model_2",
-                    serving_input_receiver_fn=serving_input_receiver_fn)
+                    serving_input_receiver_fn=x_serving_input_receiver_fn)
 
     output_predict_file = os.path.join(FLAGS.output_dir, "test_results.tsv")
     with tf.gfile.GFile(output_predict_file, "w") as writer:
