@@ -8,3 +8,4 @@
 
 cd raw-paddle/model_with_code
 /home/work/tools/python-3-tf-1.14.0-gpu/bin/python3.6 model.py
+/home/work/tools/python-3-tf-1.14.0-gpu/bin/python3.6 model_batchsize.py
