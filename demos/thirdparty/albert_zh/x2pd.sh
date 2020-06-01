@@ -9,3 +9,7 @@
 cd raw-paddle/model_with_code
 /home/work/tools/python-3-tf-1.14.0-gpu/bin/python3.6 model.py
 /home/work/tools/python-3-tf-1.14.0-gpu/bin/python3.6 model_batchsize.py
+
+
+/home/work/tools/python-3-tf-1.14.0-gpu/bin/python3.6 gen_tokens.py > tokens.log
+/home/work/tools/python-3-tf-1.14.0-gpu/bin/python3.6 fluid_infer_merge.py > fluid.res

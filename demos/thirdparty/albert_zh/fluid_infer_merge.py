@@ -6,6 +6,7 @@ import math
 exe = fluid.Executor(fluid.CPUPlace())
 path = "./pd-model-merge/inference_model"
 path = "./albert_paddle_infer_model"
+path = "./albert_paddle_infer_model_with_batchsize"
 
 [inference_program, feed_target_names, fetch_targets] = fluid.io.load_inference_model(dirname=path, executor=exe, params_filename="__params__")
 
@@ -18,13 +19,16 @@ IteratorV2 = [0] * 5
 ##IteratorV2[3] = fluid.layers.data(dtype='int32', shape=[64], name='IteratorV2_3', append_batch_size=False)
 ##IteratorV2[4] = fluid.layers.data(dtype='int32', shape=[64, 128], name='IteratorV2_4', append_batch_size=False) ## token_type_embeddings
 
-IteratorV2[0] = (np.zeros((64, 128))).astype('int32')
-IteratorV2[1] = (np.zeros((64, 128))).astype('int32')
-IteratorV2[2] = (np.zeros((64, 128))).astype('int32')
+batch_size = 218
 
-with open('./input_ids', 'r') as fin_input, \
-    open('./input_mask', 'r') as fin_mask, \
-    open('./segment_ids', 'r') as fin_token:
+IteratorV2[0] = (np.zeros((batch_size, 128))).astype('int32')
+IteratorV2[1] = (np.zeros((batch_size, 128))).astype('int32')
+IteratorV2[2] = (np.zeros((batch_size, 128))).astype('int32')
+
+gen_flag = ".gen"
+with open('./input_ids' + gen_flag, 'r') as fin_input, \
+    open('./input_mask' + gen_flag, 'r') as fin_mask, \
+    open('./segment_ids' + gen_flag, 'r') as fin_token:
     i = 0
     for line in fin_input:
         line = line.strip("\n").split(" ")
