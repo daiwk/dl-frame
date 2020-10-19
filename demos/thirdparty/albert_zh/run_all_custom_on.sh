@@ -248,8 +248,8 @@ function main()
 
 #    pretrain_and_finetune
 #    only_pretrain
-#    only_finetune
-    only_extract
+    only_finetune
+#    only_extract
 
 }
 

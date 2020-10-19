@@ -26,7 +26,7 @@ def kmeans():
                                          init_size=1000, batch_size=1000, verbose=True)
     return cluster
 
-def run_cluster(file, file_out):
+def run_cluster(file, file_out, delmethod):
     with open(file, 'r') as fin, \
              open(file_out, 'w') as fout:
         tag_lst = []
@@ -35,10 +35,17 @@ def run_cluster(file, file_out):
         for line in fin:
             if idx > max_cnt:
                 break
-            line = line.strip("\n").split("\t")
-            tag = line[0]
-            tag_lst.append(tag)
-            lst = [float(i) for i in line[1].split(";")]
+            if delmethod == "albert":
+                line = line.strip("\n").split("\t")
+                tag = line[0]
+                tag_lst.append(tag)
+                lst = [float(i) for i in line[1].split(";")]
+            elif delmethod == "w2v":
+                line = line.strip("\n").split(" ")
+                tag = line[0]
+                tag_lst.append(tag)
+                lst = [float(i) for i in line[1:-1]]
+
             X_raw.append(lst)
             idx += 1
         X = np.array(X_raw)
@@ -57,5 +64,5 @@ def run_cluster(file, file_out):
             fout.write(out_str)
 
 if __name__ == "__main__":
-    run_cluster("features.txt", "output/albert_vec.cluster")
-    run_cluster("./my_set/feed_data/tag_news_with_video_vector", "output/w2v.cluster")
+    run_cluster("features.txt", "output/albert_vec.cluster", "albert")
+    run_cluster("./my_set/feed_data/tag_news_with_video_vector", "output/w2v.cluster", "w2v")

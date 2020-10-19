@@ -30,6 +30,8 @@ import tensorflow as tf
 flags = tf.flags
 
 FLAGS = flags.FLAGS
+max_cnt = 100000
+fout = open("out_file", "wb")
 
 ## Required parameters
 flags.DEFINE_string(
@@ -284,9 +286,11 @@ def convert_single_example(ex_index, example, label_list, max_seq_length,
   assert len(segment_ids) == max_seq_length
 
   label_id = label_map[example.label]
-  if ex_index < 5:
+  if ex_index < max_cnt:
     tf.logging.info("*** Example ***")
     tf.logging.info("guid: %s" % (example.guid))
+    x = " ".join([tokenization.printable_text(x) for x in tokens]) + "\n"
+    fout.write(x.encode("utf8"))
     tf.logging.info("tokens: %s" % " ".join(
         [tokenization.printable_text(x) for x in tokens]))
     tf.logging.info("input_ids: %s" % " ".join([str(x) for x in input_ids]))
@@ -369,7 +373,7 @@ def file_based_input_fn_builder(input_file, seq_length, is_training,
     if is_training:
       d = d.repeat()
       d = d.shuffle(buffer_size=100)
-
+ 
     d = d.apply(
         tf.contrib.data.map_and_batch(
             lambda record: _decode_record(record, name_to_features),
@@ -854,6 +858,7 @@ def main(_):
         seq_length=FLAGS.max_seq_length,
         is_training=False,
         drop_remainder=eval_drop_remainder)
+
 
     #######################################################################################################################
     # evaluate all checkpoints; you can use the checkpoint with the best dev accuarcy
