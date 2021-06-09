@@ -9,7 +9,7 @@ for i in xrange(0, file_num):
         xi = "0" + str(i)
     else:
         xi = str(i)
-    x = "cat ./output/%s_%s| ~/daiwenkai/tools/python-2.7.14/bin/python ./read_gcms.py ./output/info.res.%s %s &" \
+    x = "cat ./output/%s_%s| ./python-2.7.14/bin/python ./read_xxxx.py ./output/info.res.%s %s &" \
         % (prefix, xi, xi, "imgs")
     print x
 print "wait"

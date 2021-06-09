@@ -37,11 +37,6 @@ function get_info()
 {
     rm -rf imgs/* 
     
-    mkdir -p imgs/dtnews
-    mkdir -p imgs/dtvideo
-    mkdir -p imgs/video
-    mkdir -p imgs/msv
-    
     cat nid.only_168.res| python trans.py | sort -k2,2 -nr | head -n 50000 > nid.only_168.res.format
 
     prefix=nid.only_168.res.format
@@ -62,29 +57,21 @@ function get_info_infer()
 {
     rm -rf imgs_infer/* 
     
-    mkdir -p imgs_infer/dtnews
-    mkdir -p imgs_infer/dtvideo
-    mkdir -p imgs_infer/video
-    mkdir -p imgs_infer/msv
-    
-    #$python get_infer_img.py
     time cat badcase.$infer_flag.txt | $python read_xxxx.py bad_case.res imgs_infer 
-    #cp imgs_infer/dtnews/*.jpg ./imgs/dtnews/
-
 }
 
 function get_img_vec() 
 {
-    export https_proxy=http://xxx:aaa
-    export http_proxy=http://xxx:aaa
+#    export https_proxy=http://xxx:aaa
+#    export http_proxy=http://xxx:aaa
     
     time $python3 -u multimodal_infer.py ./imgs/ ./img.vec.$MODEL_TYPE
 }
 
 function get_img_vec_infer() 
 {
-    export https_proxy=http://xxx:aaa
-    export http_proxy=http://xxx:aaa
+#    export https_proxy=http://xxx:aaa
+#    export http_proxy=http://xxx:aaa
     
     time $python3 -u multimodal_infer.py ./imgs_infer/ ./img_infer.vec.$MODEL_TYPE 
 }
