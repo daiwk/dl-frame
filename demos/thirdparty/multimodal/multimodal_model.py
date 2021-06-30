@@ -88,7 +88,7 @@ def add_prefix(model, prefix: str, custom_objects=None):
 
 def multimodal(model_num, run_type="infer"):
     """multimodal"""
-    base_model = image_model(model_num)
+    base_model = image_model(model_num, run_type)
     # Get pretrained language model with transformer architecture
     #raw_transformer_model = TFDistilBertForSequenceClassification.from_pretrained('distilbert-base-uncased')
 
@@ -131,9 +131,25 @@ def multimodal(model_num, run_type="infer"):
     # define model with three input types, first two types will come from the tokenizer
 
     if run_type == "infer":
-        multimodal_model = tf.keras.Model(inputs=[input_ids_in, input_masks_in, base_model.input], outputs = head, name='Multimodal_%d' % model_num)
+        multimodal_model = tf.keras.Model(inputs=[input_ids_in, input_masks_in, base_model.input], outputs=head, name='Multimodal_%d' % model_num)
     elif run_type == "train":
-        multimodal_model = tf.keras.Model(inputs=[input_ids_in, input_masks_in, base_model.input], outputs = classify_head, name='Multimodal_class_%d' % model_num)
+        multimodal_model = tf.keras.Model(inputs=[input_ids_in, input_masks_in, base_model.input], outputs=classify_head, name='Multimodal_class_%d' % model_num)
+    elif run_type == "train_only_img":
+        gap = tf.keras.layers.GlobalAveragePooling2D()(base_model.output)
+        d1 = tf.keras.layers.Dense(512, activation="relu")(gap)
+        d2 = tf.keras.layers.Dense(256, activation="relu")(d1)
+        d3 = tf.keras.layers.Dense(128, activation="relu")(d2)
+        d4 = tf.keras.layers.Dense(64, activation="relu")(d3)
+        classify_head_only_img = tf.keras.layers.Dense(label_dim, activation="softmax")(d4)
+        multimodal_model = tf.keras.Model(inputs=[base_model.input], outputs = classify_head_only_img, name='Multimodal_class_img_%d' % model_num)
+    elif run_type == "infer_only_img":
+        gap = tf.keras.layers.GlobalAveragePooling2D()(base_model.output)
+        d1 = tf.keras.layers.Dense(512, activation="relu")(gap)
+        d2 = tf.keras.layers.Dense(256, activation="relu")(d1)
+        d3 = tf.keras.layers.Dense(128, activation="relu")(d2)
+        d4 = tf.keras.layers.Dense(64, activation="relu")(d3)
+        multimodal_model = tf.keras.Model(inputs=[base_model.input], outputs = d4, name='Multimodal_class_img_%d' % model_num)
+
     
     ## only bert
     #multimodal_model = tf.keras.Model(inputs=[input_ids_in, input_masks_in], outputs=cls_token, name='Multimodal_%d' % model_num)
@@ -168,7 +184,7 @@ model_type = os.environ["MODEL_TYPE"]
 dim = int(os.environ["DIM"])
 
 
-def image_model(model_num):
+def image_model(model_num, run_type):
     """image_model"""
     i = tf.keras.layers.Input([None, None, 3], dtype = tf.uint8)
     x = tf.cast(i, tf.float32)
@@ -183,11 +199,17 @@ def image_model(model_num):
 ##        for layer in model.layers:
 ##            layer.name = layer.name + str("_%d" % model_num) 
 
-    elif model_type == "DenseNet201":
+    elif model_type == "DenseNet201_withglv":
         base_model = tf.keras.applications.DenseNet201(weights='imagenet')
         x = tf.keras.applications.densenet.preprocess_input(x)
         base_model.summary()
         model = tf.keras.Model(inputs=base_model.input, outputs=base_model.get_layer('avg_pool').output) # 1920
+
+    elif model_type == "DenseNet201":
+        base_model = tf.keras.applications.DenseNet201(weights='imagenet')
+        x = tf.keras.applications.densenet.preprocess_input(x)
+        base_model.summary()
+        model = tf.keras.Model(inputs=base_model.input, outputs=base_model.get_layer('relu').output) # None, 7, 7, 1920
 
     elif model_type == "NASNetMobile":
         base_model = tf.keras.applications.NASNetMobile(weights='imagenet')
@@ -207,7 +229,10 @@ def image_model(model_num):
         base_model.summary()
         model = tf.keras.Model(inputs=base_model.input, outputs=base_model.get_layer('avg_pool').output) # 2048
 
-    new_model = add_prefix(model, "%s_%d_" % (model_type, model_num))
+    if run_type != "train_only_img":
+        new_model = add_prefix(model, "%s_%d_" % (model_type, model_num))
+    else:
+        new_model = model
     for layer in new_model.layers:
         layer.trainable = False
     new_model.summary()

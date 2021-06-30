@@ -31,11 +31,11 @@ tf.random.set_seed(1234)
 import multimodal_model
 
 
-bad_nids = set()
-with open("./badcase.txt", 'r') as finbad:
-    for line in finbad:
-        nid = line.strip("\t")[0]
-        bad_nids.add(nid)
+#bad_nids = set()
+#with open("./badcase.txt", 'r') as finbad:
+#    for line in finbad:
+#        nid = line.strip("\t")[0]
+#        bad_nids.add(nid)
 
 ##def read_tensor_from_image_file(file_name,
 ##                                input_height=299,
@@ -68,6 +68,13 @@ input_dir = "./imgs/"
 file_out = sys.argv[2]
 input_dir = sys.argv[1]
 
+white_nids = set()
+with open("5000nids", 'r') as fin_white:
+    for line in fin_white:
+        line = line.strip("\n")
+        white_nids.add(line)
+
+
 
 dic_nidinfo = {}
 if "infer" not in input_dir:
@@ -78,6 +85,8 @@ if "infer" not in input_dir:
             if len(line) != 6:
                 continue
             nid = line[0]
+            if nid not in white_nids:
+                continue
             #title = line[3][:100] # title
             #title = line[2] # cate
             title = line[3] # title
@@ -125,11 +134,17 @@ batchsize = 256
 #batchsize = 1
 dataset = image_ds.batch(batchsize)
 
-multimodal_model1 = multimodal_model.multimodal(1, run_type="infer")
-checkpoint_path = "models_ckpt/multimodal-{epoch:04d}.ckpt"
+ckpt = sys.argv[3]
+prefix = os.environ["flag"]
+
+##multimodal_model1 = multimodal_model.multimodal(1, run_type="infer")
+multimodal_model1 = multimodal_model.multimodal(1, run_type="infer_only_img")
+#checkpoint_path = "models_ckpt/multimodal-{epoch:04d}.ckpt"
+checkpoint_path = "models_ckpt/%s-%s.ckpt" % (prefix, ckpt)
 checkpoint_dir = os.path.dirname(checkpoint_path)
 latest = tf.train.latest_checkpoint(checkpoint_dir)
 latest = "models_ckpt/multimodal-0004.ckpt"
+latest = checkpoint_path
 multimodal_model1.load_weights(latest)
 #multimodal_model2 = multimodal_model.multimodal(2)
 #multimodal_cross = multimodal_model.cross_layer(multimodal_model1, multimodal_model2)
@@ -141,7 +156,8 @@ with open(file_out, 'w') as fout:
     for run_images, run_nid, run_input_ids, run_attention_masks in dataset:
         #print(run_images, run_input_ids, run_attention_masks)
         ##result = multimodal_model1.predict([run_input_ids, run_attention_masks, run_images])
-        result = multimodal_model1([run_input_ids, run_attention_masks, run_images], training=False) ## speedup
+        #result = multimodal_model1([run_input_ids, run_attention_masks, run_images], training=False) ## speedup
+        result = multimodal_model1([run_images], training=False) ## speedup
         #result = multimodal_model1([run_input_ids, run_attention_masks], training=False) ## speedup only bert
         #result = multimodal_cross.predict([run_input_ids, run_attention_masks, run_images, run_input_ids, run_attention_masks, run_images])
         xresult = tf.reshape(result, [-1])
